@@ -14,6 +14,7 @@ interface LessonState {
     submitAnswer: (isCorrect: boolean, feedback?: string) => void;
     nextQuestion: () => void;
     setSelection: (selection: any) => void;
+    resetForRetry: () => void;
 }
 
 export const useLessonStore = create<LessonState>((set) => ({
@@ -60,5 +61,11 @@ export const useLessonStore = create<LessonState>((set) => ({
         selectedAnswer: null
     })),
 
-    setSelection: (selection) => set({ selectedAnswer: selection })
+    setSelection: (selection) => set({ selectedAnswer: selection }),
+
+    resetForRetry: () => set({
+        isCorrect: null,
+        feedbackMessage: null,
+        selectedAnswer: null
+    })
 }));

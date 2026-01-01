@@ -90,7 +90,14 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
     };
 
     const handleContinue = () => {
-        nextQuestion();
+        if (isCorrect === true) {
+            // Correct: move to next question
+            nextQuestion();
+        } else {
+            // Incorrect: allow retry by resetting state (but don't advance)
+            // Heart already deducted in submitAnswer
+            useLessonStore.getState().resetForRetry();
+        }
     };
 
     // Dispatcher
