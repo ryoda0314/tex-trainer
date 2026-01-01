@@ -140,18 +140,20 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
                 {renderQuestion()}
             </main>
 
-            <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-white z-40">
-                <div className="max-w-2xl mx-auto">
-                    {!isCorrect && showCheckButton && <Button
-                        variant={selectedAnswer ? "primary" : "locked"}
-                        fullWidth
-                        size="lg"
-                        onClick={handleCheck}
-                    >
-                        CHECK
-                    </Button>}
+            {isCorrect === null && (
+                <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-white z-40">
+                    <div className="max-w-2xl mx-auto">
+                        {showCheckButton && <Button
+                            variant={selectedAnswer ? "primary" : "locked"}
+                            fullWidth
+                            size="lg"
+                            onClick={handleCheck}
+                        >
+                            CHECK
+                        </Button>}
+                    </div>
                 </div>
-            </div>
+            )}
 
             <FeedbackSheet
                 status={isCorrect === true ? 'correct' : isCorrect === false ? 'incorrect' : null}
