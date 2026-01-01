@@ -2,7 +2,7 @@
 
 import { QuestionArrange, ArrangeTile } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
-import { Plus, Trash, ArrowUp, ArrowDown, Eye } from "lucide-react";
+import { Plus, Trash, ArrowUp, ArrowDown, Eye, Copy, Shuffle } from "lucide-react";
 import { KatexRenderer } from "@/components/ui/KatexRenderer";
 import { cn } from "@/lib/utils";
 
@@ -78,6 +78,40 @@ export function ArrangeEditor({ question, onChange }: ArrangeEditorProps) {
             // correctSequence is directly derived from the order of initialTiles (the solution tiles)
             correctSequence: tiles.map(t => t.content)
         });
+    };
+
+    // -- Alternative Sequences Management --
+    const addAlternativeSequence = () => {
+        // Copy current sequence as a starting point
+        const current = question.alternativeSequences || [];
+        const newSeq = [...question.correctSequence];
+        update({ alternativeSequences: [...current, newSeq] });
+    };
+
+    const removeAlternativeSequence = (index: number) => {
+        const current = [...(question.alternativeSequences || [])];
+        current.splice(index, 1);
+        update({ alternativeSequences: current.length > 0 ? current : undefined });
+    };
+
+    const updateAlternativeSequence = (seqIndex: number, tileIndex: number, value: string) => {
+        const current = [...(question.alternativeSequences || [])];
+        const seq = [...current[seqIndex]];
+        seq[tileIndex] = value;
+        current[seqIndex] = seq;
+        update({ alternativeSequences: current });
+    };
+
+    const moveAltTile = (seqIndex: number, tileIndex: number, direction: 'up' | 'down') => {
+        const current = [...(question.alternativeSequences || [])];
+        const seq = [...current[seqIndex]];
+        if (direction === 'up' && tileIndex > 0) {
+            [seq[tileIndex], seq[tileIndex - 1]] = [seq[tileIndex - 1], seq[tileIndex]];
+        } else if (direction === 'down' && tileIndex < seq.length - 1) {
+            [seq[tileIndex], seq[tileIndex + 1]] = [seq[tileIndex + 1], seq[tileIndex]];
+        }
+        current[seqIndex] = seq;
+        update({ alternativeSequences: current });
     };
 
     // Derived preview of the goal
@@ -211,7 +245,83 @@ export function ArrangeEditor({ question, onChange }: ArrangeEditorProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Alternative Sequences */}
+                <div className="space-y-4 border-t pt-6">
+                    <div className="flex items-center justify-between">
+                        <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                            <Shuffle size={16} /> Alternative Sequences (順不同)
+                        </label>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-purple-600 hover:bg-purple-50"
+                            onClick={addAlternativeSequence}
+                            disabled={question.correctSequence.length === 0}
+                        >
+                            <Copy size={14} className="mr-1" /> Add Alternative
+                        </Button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                        追加の正解パターン（例: a_n^2 と a^2_n の両方を正解にする場合）
+                    </p>
+
+                    <div className="space-y-4">
+                        {(question.alternativeSequences || []).map((seq, seqIndex) => (
+                            <div key={seqIndex} className="p-4 border border-purple-100 bg-purple-50/30 rounded-lg space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-purple-600">Alternative #{seqIndex + 1}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 font-mono">
+                                            {seq.join('')}
+                                        </span>
+                                        <Button
+                                            variant="danger"
+                                            size="sm"
+                                            onClick={() => removeAlternativeSequence(seqIndex)}
+                                            className="h-6 w-6 p-0"
+                                        >
+                                            <Trash size={12} />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {seq.map((tile, tileIndex) => (
+                                        <div key={tileIndex} className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => moveAltTile(seqIndex, tileIndex, 'up')}
+                                                disabled={tileIndex === 0}
+                                                className="text-gray-300 hover:text-purple-500 disabled:opacity-30"
+                                            >
+                                                ←
+                                            </button>
+                                            <input
+                                                type="text"
+                                                value={tile}
+                                                onChange={(e) => updateAlternativeSequence(seqIndex, tileIndex, e.target.value)}
+                                                className="w-16 p-1 border border-purple-200 rounded focus:ring-2 focus:ring-purple-500 outline-none font-mono text-xs text-center font-bold"
+                                            />
+                                            <button
+                                                onClick={() => moveAltTile(seqIndex, tileIndex, 'down')}
+                                                disabled={tileIndex === seq.length - 1}
+                                                className="text-gray-300 hover:text-purple-500 disabled:opacity-30"
+                                            >
+                                                →
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                        {(!question.alternativeSequences || question.alternativeSequences.length === 0) && (
+                            <div className="text-center p-4 border border-dashed border-purple-200 rounded text-gray-400 text-sm">
+                                No alternative sequences. Add one to allow multiple correct orders.
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );
 }
+
