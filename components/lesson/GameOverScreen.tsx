@@ -1,11 +1,11 @@
 'use client';
 
 import { Button } from "@/components/ui/Button";
-import { HeartCrack, LogOut, Clock } from "lucide-react";
+import { HeartCrack, LogOut, Clock, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProgressStore } from "@/store/useProgressStore";
 import { HeartTimer } from "@/components/ui/HeartTimer";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface GameOverScreenProps {
     onRetry?: () => void;
@@ -13,15 +13,17 @@ interface GameOverScreenProps {
 
 export function GameOverScreen({ onRetry }: GameOverScreenProps) {
     const router = useRouter();
-    const { hearts, checkHeartRegen } = useProgressStore();
+    const { hearts, checkHeartRegen, shareForHeart, getShareHeartsRemaining } = useProgressStore();
+    const [shareRemaining, setShareRemaining] = useState(getShareHeartsRemaining());
 
     // Check for heart regeneration periodically
     useEffect(() => {
         const interval = setInterval(() => {
             checkHeartRegen();
+            setShareRemaining(getShareHeartsRemaining());
         }, 1000);
         return () => clearInterval(interval);
-    }, [checkHeartRegen]);
+    }, [checkHeartRegen, getShareHeartsRemaining]);
 
     // Auto-dismiss when hearts are back
     useEffect(() => {
@@ -29,6 +31,31 @@ export function GameOverScreen({ onRetry }: GameOverScreenProps) {
             onRetry();
         }
     }, [hearts, onRetry]);
+
+    const handleShare = async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: 'TeX Trainer',
+                    text: 'LaTeX記法を楽しく学べるアプリで勉強中！',
+                    url: window.location.origin
+                });
+
+                // Grant heart after successful share
+                const result = shareForHeart();
+                setShareRemaining(result.remaining);
+            } else {
+                // Fallback: copy link
+                await navigator.clipboard.writeText(window.location.origin);
+                const result = shareForHeart();
+                setShareRemaining(result.remaining);
+                alert('リンクをコピーしました！ハートを1つゲット！');
+            }
+        } catch (err) {
+            // User cancelled share - don't grant heart
+            console.log('Share cancelled');
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
@@ -49,6 +76,19 @@ export function GameOverScreen({ onRetry }: GameOverScreenProps) {
                 </div>
 
                 <div className="w-full space-y-4 mt-4">
+                    {shareRemaining > 0 && (
+                        <Button
+                            variant="primary"
+                            fullWidth
+                            size="lg"
+                            onClick={handleShare}
+                            className="bg-blue-500 border-blue-600 hover:bg-blue-600"
+                        >
+                            <Share2 className="mr-2" size={20} />
+                            シェアして❤️ゲット（残り{shareRemaining}回）
+                        </Button>
+                    )}
+
                     <Button
                         variant="danger"
                         fullWidth

@@ -4,9 +4,12 @@ import { UserProgress } from '@/lib/types';
 
 // Heart regeneration: 1 heart every 5 minutes (in milliseconds)
 const HEART_REGEN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_SHARE_HEARTS_PER_DAY = 3;
 
 interface ProgressState extends UserProgress {
     lastHeartLossAt: string | null; // ISO timestamp when hearts were last lost
+    shareHeartsToday: number; // Hearts earned from sharing today
+    lastShareDate: string | null; // Date of last share (YYYY-MM-DD)
 
     setName: (name: string) => void;
     addXp: (amount: number) => void;
@@ -16,6 +19,8 @@ interface ProgressState extends UserProgress {
     updateStreak: () => void;
     checkHeartRegen: () => void; // Check and apply heart regeneration
     getTimeUntilNextHeart: () => number | null; // Returns ms until next heart, or null if full
+    shareForHeart: () => { success: boolean; remaining: number }; // Share to earn heart
+    getShareHeartsRemaining: () => number; // Get remaining share hearts for today
 }
 
 export const useProgressStore = create<ProgressState>()(
@@ -115,6 +120,50 @@ export const useProgressStore = create<ProgressState>()(
                     return { streak: 1, lastActiveDate: new Date().toISOString() };
                 }
             }),
+
+            // Share for hearts
+            shareHeartsToday: 0,
+            lastShareDate: null,
+
+            shareForHeart: () => {
+                const state = get();
+                const today = new Date().toISOString().split('T')[0];
+
+                // Reset counter if new day
+                let sharesToday = state.shareHeartsToday;
+                if (state.lastShareDate !== today) {
+                    sharesToday = 0;
+                }
+
+                // Check if limit reached
+                if (sharesToday >= MAX_SHARE_HEARTS_PER_DAY) {
+                    return { success: false, remaining: 0 };
+                }
+
+                // Check if hearts already full
+                if (state.hearts >= state.maxHearts) {
+                    return { success: false, remaining: MAX_SHARE_HEARTS_PER_DAY - sharesToday };
+                }
+
+                // Grant heart
+                set({
+                    hearts: Math.min(state.maxHearts, state.hearts + 1),
+                    shareHeartsToday: sharesToday + 1,
+                    lastShareDate: today
+                });
+
+                return { success: true, remaining: MAX_SHARE_HEARTS_PER_DAY - sharesToday - 1 };
+            },
+
+            getShareHeartsRemaining: () => {
+                const state = get();
+                const today = new Date().toISOString().split('T')[0];
+
+                if (state.lastShareDate !== today) {
+                    return MAX_SHARE_HEARTS_PER_DAY;
+                }
+                return Math.max(0, MAX_SHARE_HEARTS_PER_DAY - state.shareHeartsToday);
+            },
         }),
         {
             name: 'tex-trainer-progress',
@@ -124,3 +173,5 @@ export const useProgressStore = create<ProgressState>()(
 
 // Export the regen interval for UI usage
 export const HEART_REGEN_INTERVAL = HEART_REGEN_INTERVAL_MS;
+export const MAX_SHARE_HEARTS = MAX_SHARE_HEARTS_PER_DAY;
+

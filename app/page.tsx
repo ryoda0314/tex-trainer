@@ -13,6 +13,7 @@ import { Unit } from '@/lib/types';
 import { useEffect, useState } from 'react';
 import { WelcomeModal } from '@/components/ui/WelcomeModal';
 import { ProfileModal } from '@/components/ui/ProfileModal';
+import { InstallPrompt } from '@/components/ui/InstallPrompt';
 
 // Unit Component
 function UnitSection({ unit, unlocked, completedLessons }: { unit: Unit, unlocked: boolean, completedLessons: Record<string, any> }) {
@@ -83,6 +84,7 @@ export default function Home() {
     <div className="min-h-screen bg-white pb-20">
       <WelcomeModal />
       <ProfileModal isOpen={isProfileOpen} onClose={() => setIsProfileOpen(false)} />
+      <InstallPrompt />
 
       {/* Top Bar */}
       <div className="sticky top-0 bg-white/90 backdrop-blur border-b z-50 px-4 py-2 flex justify-center gap-8">

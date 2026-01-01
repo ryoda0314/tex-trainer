@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useProgressStore } from "@/store/useProgressStore";
 import { Button } from "@/components/ui/Button";
-import { Heart, Star, User, LogIn, LogOut, Cloud, CloudOff, Loader2, Settings } from "lucide-react";
+import { Heart, Star, User, LogIn, LogOut, Cloud, CloudOff, Loader2, Settings, Share2 } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { useAdmin } from '@/hooks/useAdmin';
@@ -17,7 +17,7 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-    const { name, xp, hearts, maxHearts, refillHearts, setName } = useProgressStore();
+    const { name, xp, hearts, maxHearts, refillHearts, setName, shareForHeart, getShareHeartsRemaining } = useProgressStore();
     const { user, signOut, loading: authLoading } = useAuth();
     const { syncToCloud, syncFromCloud } = useCloudSync();
     const { isAdmin } = useAdmin();
@@ -89,6 +89,35 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                     disabled={hearts >= maxHearts}
                                 >
                                     {hearts >= maxHearts ? "Hearts Full" : "Refill Hearts (Admin)"}
+                                </Button>
+                            )}
+
+                            {hearts < maxHearts && getShareHeartsRemaining() > 0 && (
+                                <Button
+                                    variant="secondary"
+                                    fullWidth
+                                    onClick={async () => {
+                                        try {
+                                            if (navigator.share) {
+                                                await navigator.share({
+                                                    title: 'TeX Trainer',
+                                                    text: 'LaTeX記法を楽しく学べるアプリで勉強中！',
+                                                    url: window.location.origin
+                                                });
+                                                shareForHeart();
+                                            } else {
+                                                await navigator.clipboard.writeText(window.location.origin);
+                                                shareForHeart();
+                                                alert('リンクをコピーしました！ハートを1つゲット！');
+                                            }
+                                        } catch (err) {
+                                            console.log('Share cancelled');
+                                        }
+                                    }}
+                                    className="bg-blue-50 border-blue-200 text-blue-600 hover:bg-blue-100"
+                                >
+                                    <Share2 size={16} className="mr-2" />
+                                    シェアして❤️ゲット（残り{getShareHeartsRemaining()}回）
                                 </Button>
                             )}
 
