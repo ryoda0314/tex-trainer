@@ -3,7 +3,7 @@ import { Question } from '@/lib/types';
 
 interface LessonState {
     currentQuestionIndex: number;
-    hearts: number;
+    // hearts: number; (Removed)
     isCorrect: boolean | null; // null = pending, true = correct, false = wrong
     feedbackMessage: string | null;
     selectedAnswer: any; // Generic to hold selection state
@@ -18,7 +18,7 @@ interface LessonState {
 
 export const useLessonStore = create<LessonState>((set) => ({
     currentQuestionIndex: 0,
-    hearts: 3, // Optional, can be infinite for this MVP
+    // hearts: 3, (Removed)
     isCorrect: null,
     feedbackMessage: null,
     selectedAnswer: null,
@@ -32,15 +32,26 @@ export const useLessonStore = create<LessonState>((set) => ({
         feedbackMessage: null,
         selectedAnswer: null,
         mistakes: [],
-        hearts: 3
+        // Removed local hearts init
     }),
 
-    submitAnswer: (isCorrect, feedback) => set((state) => ({
-        isCorrect,
-        hearts: isCorrect ? state.hearts : Math.max(0, state.hearts - 1),
-        feedbackMessage: feedback || (isCorrect ? "Correct!" : "Try again"),
-        mistakes: isCorrect ? state.mistakes : [...state.mistakes, state.lessonQuestions[state.currentQuestionIndex].id]
-    })),
+    submitAnswer: (isCorrect, feedback) => {
+        // If incorrect, deduct global heart
+        if (!isCorrect) {
+            // We need to import the store directly to use it inside another store's action purely? 
+            // Or just call it. accessing get()... isn't cross-store.
+            // Best practice: Component calls both, OR import the store instance.
+            // Since we are in a vanilla function inside create(), we can import the other store.
+            const { useProgressStore } = require('./useProgressStore');
+            useProgressStore.getState().decrementHeart();
+        }
+
+        set((state) => ({
+            isCorrect,
+            feedbackMessage: feedback || (isCorrect ? "Correct!" : "Try again"),
+            mistakes: isCorrect ? state.mistakes : [...state.mistakes, state.lessonQuestions[state.currentQuestionIndex].id]
+        }));
+    },
 
     nextQuestion: () => set((state) => ({
         currentQuestionIndex: state.currentQuestionIndex + 1,

@@ -97,4 +97,7 @@ export interface UserProgress {
         completedAt: string;
     }>;
     unlockedUnits: string[];
+    name: string | null;
+    hearts: number;
+    maxHearts: number;
 }

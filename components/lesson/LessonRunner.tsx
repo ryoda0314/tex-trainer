@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useLessonStore } from '@/store/useLessonStore';
+import { useProgressStore } from '@/store/useProgressStore';
 import { Question } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { LessonHeader } from './LessonHeader';
@@ -11,6 +12,7 @@ import { QuestionMatch } from '@/components/lesson/QuestionMatch';
 import { QuestionCloze } from '@/components/lesson/QuestionCloze';
 import { QuestionArrange } from '@/components/lesson/QuestionArrange';
 import { QuestionInput } from '@/components/lesson/QuestionInput';
+import { GameOverScreen } from './GameOverScreen';
 import { useRouter } from 'next/navigation';
 
 interface LessonRunnerProps {
@@ -22,9 +24,11 @@ interface LessonRunnerProps {
 export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonRunnerProps) {
     const router = useRouter();
     const {
-        currentQuestionIndex, lessonQuestions, hearts, isCorrect, feedbackMessage,
+        currentQuestionIndex, lessonQuestions, isCorrect, feedbackMessage,
         selectedAnswer, initLesson, submitAnswer, nextQuestion
     } = useLessonStore();
+
+    const { hearts, decrementHeart, refillHearts } = useProgressStore();
 
     const [hasStarted, setHasStarted] = useState(false);
     const completionHandled = useRef(false);
@@ -45,6 +49,11 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
     }, [isFinished, onComplete, hasStarted]);
 
     if (!hasStarted) return null;
+
+    // Game Over Check
+    if (hearts <= 0) {
+        return <GameOverScreen onRetry={() => {/* Hearts refilled in GameOverScreen, just re-render */ }} />;
+    }
 
     const currentQuestion = lessonQuestions[currentQuestionIndex];
 
@@ -91,7 +100,13 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
             case 'SELECT_FORMULA':
                 return <QuestionSelect question={currentQuestion} onCheck={handleCheck} />;
             case 'MATCH':
-                return <QuestionMatch question={currentQuestion} onStatusChange={(done: boolean) => { if (done) submitAnswer(true); }} />;
+                return (
+                    <QuestionMatch
+                        question={currentQuestion}
+                        onStatusChange={(done: boolean) => { if (done) submitAnswer(true); }}
+                        onMistake={() => decrementHeart()}
+                    />
+                );
             case 'CLOZE':
                 return <QuestionCloze question={currentQuestion} />;
             case 'ARRANGE':
@@ -102,6 +117,9 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
                 return <div>Unknown Type</div>;
         }
     };
+
+    // Hide Check button for MATCH since it is auto-submitting on completion
+    const showCheckButton = currentQuestion.type !== 'MATCH';
 
     return (
         <div className="min-h-screen flex flex-col bg-white">
@@ -117,7 +135,7 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
 
             <div className="fixed bottom-0 left-0 right-0 p-4 border-t bg-white z-40">
                 <div className="max-w-2xl mx-auto">
-                    {!isCorrect && <Button
+                    {!isCorrect && showCheckButton && <Button
                         variant={selectedAnswer ? "primary" : "locked"}
                         fullWidth
                         size="lg"

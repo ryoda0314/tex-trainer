@@ -15,14 +15,18 @@ interface QuestionMatchUIProps {
     rightCards: Card[];
     matchedIds: Set<string>;
     selectedId: string | null;
+    errorIds: Set<string>;
+    successIds: Set<string>;
     isCorrect: boolean | null;
     onCardClick: (id: string, matchId: string) => void;
 }
 
-export function QuestionMatchUI({ question, leftCards, rightCards, matchedIds, selectedId, isCorrect, onCardClick }: QuestionMatchUIProps) {
+export function QuestionMatchUI({ question, leftCards, rightCards, matchedIds, selectedId, errorIds, successIds, isCorrect, onCardClick }: QuestionMatchUIProps) {
     const renderCard = (card: Card) => {
         const isMatched = matchedIds.has(card.id);
         const isSelected = selectedId === card.id;
+        const isError = errorIds.has(card.id);
+        const isSuccess = successIds.has(card.id);
 
         return (
             <Button
@@ -30,10 +34,12 @@ export function QuestionMatchUI({ question, leftCards, rightCards, matchedIds, s
                 variant={isMatched ? 'ghost' : isSelected ? 'secondary' : 'outline'}
                 className={cn(
                     "h-24 w-full text-lg transition-all duration-300",
-                    isMatched && "opacity-0 pointer-events-none"
+                    isMatched && "opacity-0 pointer-events-none",
+                    isError && "animate-shake bg-red-100 border-red-500 text-red-500 hover:bg-red-100 hover:text-red-500",
+                    isSuccess && "bg-green-100 border-green-500 text-green-500 hover:bg-green-100 hover:text-green-500 scale-105"
                 )}
                 onClick={() => onCardClick(card.id, card.matchId)}
-                disabled={isCorrect !== null && !isMatched}
+                disabled={(isCorrect !== null && !isMatched) || isError || isSuccess}
             >
                 {card.type === 'tex' ? (
                     <KatexRenderer tex={card.content} className="text-xl" />
@@ -68,42 +74,46 @@ export function QuestionMatchUI({ question, leftCards, rightCards, matchedIds, s
 }
 
 // Container Logic
+
 interface QuestionMatchProps {
     question: QuestionMatchType;
     onStatusChange: (done: boolean) => void;
+    onMistake?: () => void;
 }
 
-export function QuestionMatch({ question, onStatusChange }: QuestionMatchProps) {
+export function QuestionMatch({ question, onStatusChange, onMistake }: QuestionMatchProps) {
     const [leftCards, setLeftCards] = useState<Card[]>([]);
     const [rightCards, setRightCards] = useState<Card[]>([]);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [matchedIds, setMatchedIds] = useState<Set<string>>(new Set());
+    const [errorIds, setErrorIds] = useState<Set<string>>(new Set());
+    const [successIds, setSuccessIds] = useState<Set<string>>(new Set());
     const { setSelection, isCorrect } = useLessonStore();
 
     useEffect(() => {
-        // Generate cards
         const left: Card[] = [];
         const right: Card[] = [];
 
         question.pairs.forEach((pair, idx) => {
-            // Code on Left
             left.push({ id: `p${idx}-code`, content: pair.code, type: 'code', matchId: `p${idx}` });
-            // TeX on Right
             right.push({ id: `p${idx}-tex`, content: pair.tex, type: 'tex', matchId: `p${idx}` });
         });
 
-        // Shuffle independently
         setLeftCards(left.sort(() => Math.random() - 0.5));
         setRightCards(right.sort(() => Math.random() - 0.5));
 
         setMatchedIds(new Set());
         setSelectedId(null);
+        setErrorIds(new Set());
+        setSuccessIds(new Set());
         setSelection(false);
     }, [question, setSelection]);
 
     const handleCardClick = (id: string, matchId: string) => {
         if (isCorrect !== null) return; // Locked
         if (matchedIds.has(id)) return; // Already matched
+        if (errorIds.has(id)) return; // Locked by error animation
+        if (successIds.has(id)) return; // Locked by success animation
 
         if (!selectedId) {
             setSelectedId(id);
@@ -114,39 +124,51 @@ export function QuestionMatch({ question, onStatusChange }: QuestionMatchProps) 
             }
 
             // Check Match
-            // We need to look in both lists to find the card object for selectedId, 
-            // but we only need the matchId which we don't have stored in state directly except via the card object.
-            // Actually, we pass matchId in the handler. Ideally we should compare matchId of current click with matchId of selectedId.
-            // But we didn't store matchId of selectedId.
-            // Let's find the card.
             const allCards = [...leftCards, ...rightCards];
             const prevCard = allCards.find(c => c.id === selectedId);
 
             if (prevCard && prevCard.matchId === matchId) {
                 // Match!
-                const newSet = new Set(matchedIds);
-                newSet.add(id);
-                newSet.add(selectedId);
-                setMatchedIds(newSet);
+                const newSuccess = new Set<string>();
+                newSuccess.add(id);
+                newSuccess.add(selectedId);
+                setSuccessIds(newSuccess);
                 setSelectedId(null);
 
-                // Check if all done
-                if (newSet.size === allCards.length) {
-                    setSelection(true);
-                    onStatusChange(true);
-                }
+                // Delay hiding
+                setTimeout(() => {
+                    setMatchedIds(prev => {
+                        const newMatched = new Set(prev);
+                        newMatched.add(id);
+                        newMatched.add(selectedId);
+
+                        // Check if all done
+                        if (newMatched.size === allCards.length) {
+                            setSelection(true);
+                            onStatusChange(true);
+                        }
+                        return newMatched;
+                    });
+                    setSuccessIds(new Set());
+                }, 500);
+
             } else {
-                // Mismatch - just deselect, or maybe brief error?
-                // For now just swap selection to the new one? Or deselect all?
-                // Standard memory game often deselects both on mismatch after delay.
-                // Here we essentially "Select A", "Select B". If mismatch, maybe just select B?
-                // User logic: "oops wrong match".
-                // Let's just switch selection to the new card, effectively "changing mind".
-                // UNLESS they are trying to match.
-                // Simple behavior: If 2nd click is wrong, Reset selection to null (forcing user to start over pair)
-                // OR set selection to the new card.
-                // Let's set selection to new card to allow rapid clicking.
-                setSelectedId(id);
+                // Mismatch Logic
+                if (onMistake) onMistake();
+
+                // Show Error Feedback
+                const newErrors = new Set<string>();
+                newErrors.add(id);
+                newErrors.add(selectedId);
+                setErrorIds(newErrors);
+
+                // Clear error after animation
+                setTimeout(() => {
+                    setErrorIds(new Set());
+                }, 800);
+
+                // Reset selection
+                setSelectedId(null);
             }
         }
     };
@@ -158,7 +180,8 @@ export function QuestionMatch({ question, onStatusChange }: QuestionMatchProps) 
             rightCards={rightCards}
             matchedIds={matchedIds}
             selectedId={selectedId}
-            // @ts-ignore
+            errorIds={errorIds}
+            successIds={successIds}
             isCorrect={isCorrect}
             onCardClick={handleCardClick}
         />

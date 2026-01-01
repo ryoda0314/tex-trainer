@@ -13,7 +13,7 @@
   --color-duo-gray-side: #cecece;
   --color-duo-text: #3c3c3c;
   --color-duo-bg: #ffffff;
-  
+
   --radius-xl: 16px;
   --radius-2xl: 20px;
 }
@@ -34,7 +34,36 @@ body {
 .btn-3d {
   transition: transform 0.1s, box-shadow 0.1s;
 }
+
 .btn-3d:active {
   transform: translateY(4px);
-  box-shadow: 0 0px 0 0 transparent; /* Hides shadow on press */
+  box-shadow: 0 0px 0 0 transparent;
+  /* Hides shadow on press */
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  10%,
+  30%,
+  50%,
+  70%,
+  90% {
+    transform: translateX(-2px);
+  }
+
+  20%,
+  40%,
+  60%,
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.3s cubic-bezier(.36, .07, .19, .97) both;
 }

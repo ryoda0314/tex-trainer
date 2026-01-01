@@ -3,7 +3,10 @@ import { persist } from 'zustand/middleware';
 import { UserProgress } from '@/lib/types';
 
 interface ProgressState extends UserProgress {
+    setName: (name: string) => void;
     addXp: (amount: number) => void;
+    decrementHeart: () => void;
+    refillHearts: () => void;
     completeLesson: (lessonId: string, score: number) => void;
     updateStreak: () => void;
 }
@@ -16,8 +19,17 @@ export const useProgressStore = create<ProgressState>()(
             lastActiveDate: null,
             completedLessons: {},
             unlockedUnits: ['unit1'], // Unit 1 unlocked by default
+            name: null,
+            hearts: 5,
+            maxHearts: 5,
+
+            setName: (name) => set({ name }),
 
             addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
+
+            decrementHeart: () => set((state) => ({ hearts: Math.max(0, state.hearts - 1) })),
+
+            refillHearts: () => set((state) => ({ hearts: state.maxHearts })),
 
             completeLesson: (lessonId, score) => set((state) => {
                 const existing = state.completedLessons[lessonId];
