@@ -1,9 +1,11 @@
 'use client';
 
 import { Button } from "@/components/ui/Button";
-import { HeartCrack, RefreshCw, LogOut } from "lucide-react";
+import { HeartCrack, LogOut, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useProgressStore } from "@/store/useProgressStore";
+import { HeartTimer } from "@/components/ui/HeartTimer";
+import { useEffect } from "react";
 
 interface GameOverScreenProps {
     onRetry?: () => void;
@@ -11,12 +13,22 @@ interface GameOverScreenProps {
 
 export function GameOverScreen({ onRetry }: GameOverScreenProps) {
     const router = useRouter();
-    const { refillHearts, hearts, maxHearts } = useProgressStore();
+    const { hearts, checkHeartRegen } = useProgressStore();
 
-    const handleRefill = () => {
-        refillHearts();
-        if (onRetry) onRetry();
-    };
+    // Check for heart regeneration periodically
+    useEffect(() => {
+        const interval = setInterval(() => {
+            checkHeartRegen();
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [checkHeartRegen]);
+
+    // Auto-dismiss when hearts are back
+    useEffect(() => {
+        if (hearts > 0 && onRetry) {
+            onRetry();
+        }
+    }, [hearts, onRetry]);
 
     return (
         <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-6 animate-in fade-in duration-300">
@@ -27,21 +39,16 @@ export function GameOverScreen({ onRetry }: GameOverScreenProps) {
                     Out of hearts!
                 </h2>
                 <p className="text-lg text-gray-500">
-                    You made too many mistakes. Refill your hearts to continue learning.
+                    ハートがなくなりました。時間が経つと回復します。
                 </p>
 
-                <div className="w-full space-y-4 mt-8">
-                    <Button
-                        variant="primary"
-                        fullWidth
-                        size="lg"
-                        onClick={handleRefill}
-                        className="bg-duo-blue-face border-duo-blue-side hover:bg-duo-blue-face/90"
-                    >
-                        <RefreshCw className="mr-2" size={20} />
-                        Refill & Continue
-                    </Button>
+                <div className="bg-red-50 p-6 rounded-xl border border-red-200 flex flex-col items-center gap-2">
+                    <Clock size={24} className="text-red-500" />
+                    <HeartTimer />
+                    <span className="text-sm text-gray-500">5分ごとに1ハート回復</span>
+                </div>
 
+                <div className="w-full space-y-4 mt-4">
                     <Button
                         variant="danger"
                         fullWidth
@@ -49,7 +56,7 @@ export function GameOverScreen({ onRetry }: GameOverScreenProps) {
                         onClick={() => router.push('/')}
                     >
                         <LogOut className="mr-2" size={20} />
-                        Quit Lesson
+                        ホームに戻る
                     </Button>
                 </div>
             </div>

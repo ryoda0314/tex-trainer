@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserProgress } from '@/lib/types';
 
-// Heart regeneration: 1 heart every 30 minutes (in milliseconds)
-const HEART_REGEN_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+// Heart regeneration: 1 heart every 5 minutes (in milliseconds)
+const HEART_REGEN_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 interface ProgressState extends UserProgress {
     lastHeartLossAt: string | null; // ISO timestamp when hearts were last lost
