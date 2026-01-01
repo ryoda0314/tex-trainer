@@ -164,7 +164,30 @@ export function LessonRunner({ lessonId, initialQuestions, onComplete }: LessonR
 
 function checkGenericAnswer(q: Question, answer: any): boolean {
     if (q.type === 'ARRANGE' && Array.isArray(answer)) {
-        return JSON.stringify(answer) === JSON.stringify(q.correctSequence);
+        const answerStr = JSON.stringify(answer);
+
+        // Check primary sequence
+        if (answerStr === JSON.stringify(q.correctSequence)) {
+            return true;
+        }
+
+        // Check alternative sequences (for partial order like a_n^2 / a^2_n)
+        if (q.alternativeSequences) {
+            for (const alt of q.alternativeSequences) {
+                if (answerStr === JSON.stringify(alt)) {
+                    return true;
+                }
+            }
+        }
+
+        // If orderMatters is false, check as unordered set
+        if (q.orderMatters === false) {
+            const sortedAnswer = [...answer].sort();
+            const sortedCorrect = [...q.correctSequence].sort();
+            return JSON.stringify(sortedAnswer) === JSON.stringify(sortedCorrect);
+        }
+
+        return false;
     }
     if (q.type === 'INPUT') {
         const normalized = (answer as string).replace(/\s+/g, '');

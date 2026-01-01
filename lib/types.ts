@@ -55,6 +55,8 @@ export interface QuestionArrange extends BaseQuestion {
     initialTiles: ArrangeTile[];
     correctSequence: string[]; // Array of content strings in order
     distractors?: ArrangeTile[];
+    orderMatters?: boolean; // Default true. If false, order doesn't matter (set comparison)
+    alternativeSequences?: string[][]; // Additional valid sequences (e.g., [['a','_n','^2'], ['a','^2','_n']])
 }
 
 export interface QuestionInput extends BaseQuestion {
