@@ -93,9 +93,9 @@ export default function Home() {
         {name && (
           <button
             onClick={() => setIsProfileOpen(true)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-sm hidden md:flex items-center gap-2 hover:bg-gray-100 px-3 py-1 rounded-full transition-colors"
+            className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-gray-500 text-sm flex items-center gap-1 md:gap-2 hover:bg-gray-100 px-2 md:px-3 py-1 rounded-full transition-colors"
           >
-            Hello, {name}
+            <span className="hidden sm:inline">Hello, </span>{name}
             <Heart size={16} className="text-red-500 fill-current" />
             <span className="text-red-500">{hearts}</span>
           </button>
