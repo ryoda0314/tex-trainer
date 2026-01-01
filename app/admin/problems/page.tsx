@@ -3,6 +3,8 @@ import { unit2 } from "@/lib/content/unit2";
 import { unit3 } from "@/lib/content/unit3";
 import { ProblemList } from "@/components/admin/ProblemList";
 import { Question } from "@/lib/types";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 // Helper to extract keywords from question for better search later? 
 // For now just plain aggregation.
@@ -26,6 +28,13 @@ export default function ProblemManagerPage() {
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-7xl mx-auto">
                 <header className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 transition-colors"
+                    >
+                        <ArrowLeft size={20} />
+                        <span>ホームに戻る</span>
+                    </Link>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Problem Manager</h1>
                     <p className="text-gray-500">
                         Overview of all {questions.length} curriculum items across {3} units.
@@ -40,3 +49,4 @@ export default function ProblemManagerPage() {
         </div>
     );
 }
+
