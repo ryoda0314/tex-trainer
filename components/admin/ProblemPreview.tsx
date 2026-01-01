@@ -142,6 +142,8 @@ export function ProblemPreview({ question }: ProblemPreviewProps) {
                     rightCards={matchRightCards}
                     matchedIds={matchMatchedIds}
                     selectedId={matchSelectedId}
+                    errorIds={new Set()}
+                    successIds={new Set()}
                     isCorrect={null}
                     onCardClick={handleMatchClick}
                 />
