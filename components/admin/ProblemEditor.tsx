@@ -178,7 +178,7 @@ export function ProblemEditor({ initialQuestion }: ProblemEditorProps) {
                                     />
                                 ) : (
                                     <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300 text-gray-500">
-                                        <p>Visual editor not available for <strong>{question.type}</strong> yet.</p>
+                                        <p>Visual editor not available for <strong>{(question as { type: string }).type}</strong> yet.</p>
                                         <Button variant="ghost" onClick={() => setViewMode('json')}>Use JSON Editor</Button>
                                     </div>
                                 )}

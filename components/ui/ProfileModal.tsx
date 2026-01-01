@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import { useProgressStore } from "@/store/useProgressStore";
 import { Button } from "@/components/ui/Button";
-import { Heart, Star, User, LogIn, LogOut, Cloud, CloudOff, Loader2 } from "lucide-react";
+import { Heart, Star, User, LogIn, LogOut, Cloud, CloudOff, Loader2, Settings } from "lucide-react";
 import { useAuth } from '@/hooks/useAuth';
 import { useCloudSync } from '@/hooks/useCloudSync';
+import { useAdmin } from '@/hooks/useAdmin';
 import { AuthModal } from '@/components/auth/AuthModal';
+import Link from 'next/link';
 
 interface ProfileModalProps {
     isOpen: boolean;
@@ -17,6 +19,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
     const { name, xp, hearts, maxHearts, refillHearts, setName } = useProgressStore();
     const { user, signOut, loading: authLoading } = useAuth();
     const { syncToCloud, syncFromCloud } = useCloudSync();
+    const { isAdmin } = useAdmin();
 
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [syncing, setSyncing] = useState(false);
@@ -111,6 +114,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                 >
                                     <LogIn className="mr-2" size={18} /> ログイン / 登録
                                 </Button>
+                            )}
+
+                            {isAdmin && (
+                                <Link href="/admin/problems" onClick={onClose}>
+                                    <Button variant="outline" fullWidth>
+                                        <Settings className="mr-2" size={18} /> Admin Panel
+                                    </Button>
+                                </Link>
                             )}
 
                             <Button variant="ghost" fullWidth onClick={onClose}>
