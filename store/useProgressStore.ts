@@ -2,13 +2,20 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { UserProgress } from '@/lib/types';
 
+// Heart regeneration: 1 heart every 30 minutes (in milliseconds)
+const HEART_REGEN_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
 interface ProgressState extends UserProgress {
+    lastHeartLossAt: string | null; // ISO timestamp when hearts were last lost
+
     setName: (name: string) => void;
     addXp: (amount: number) => void;
     decrementHeart: () => void;
     refillHearts: () => void;
     completeLesson: (lessonId: string, score: number) => void;
     updateStreak: () => void;
+    checkHeartRegen: () => void; // Check and apply heart regeneration
+    getTimeUntilNextHeart: () => number | null; // Returns ms until next heart, or null if full
 }
 
 export const useProgressStore = create<ProgressState>()(
@@ -22,14 +29,59 @@ export const useProgressStore = create<ProgressState>()(
             name: null,
             hearts: 5,
             maxHearts: 5,
+            lastHeartLossAt: null,
 
             setName: (name) => set({ name }),
 
             addXp: (amount) => set((state) => ({ xp: state.xp + amount })),
 
-            decrementHeart: () => set((state) => ({ hearts: Math.max(0, state.hearts - 1) })),
+            decrementHeart: () => set((state) => {
+                if (state.hearts <= 0) return state;
+                return {
+                    hearts: state.hearts - 1,
+                    lastHeartLossAt: new Date().toISOString()
+                };
+            }),
 
-            refillHearts: () => set((state) => ({ hearts: state.maxHearts })),
+            refillHearts: () => set((state) => ({
+                hearts: state.maxHearts,
+                lastHeartLossAt: null // Clear timer when manually refilled
+            })),
+
+            checkHeartRegen: () => set((state) => {
+                if (state.hearts >= state.maxHearts) return state;
+                if (!state.lastHeartLossAt) return state;
+
+                const now = Date.now();
+                const lastLoss = new Date(state.lastHeartLossAt).getTime();
+                const elapsed = now - lastLoss;
+                const heartsToRegen = Math.floor(elapsed / HEART_REGEN_INTERVAL_MS);
+
+                if (heartsToRegen > 0) {
+                    const newHearts = Math.min(state.maxHearts, state.hearts + heartsToRegen);
+                    const isFull = newHearts >= state.maxHearts;
+
+                    return {
+                        hearts: newHearts,
+                        // Update lastHeartLossAt to account for partial time remaining
+                        lastHeartLossAt: isFull ? null : new Date(lastLoss + heartsToRegen * HEART_REGEN_INTERVAL_MS).toISOString()
+                    };
+                }
+                return state;
+            }),
+
+            getTimeUntilNextHeart: () => {
+                const state = get();
+                if (state.hearts >= state.maxHearts) return null;
+                if (!state.lastHeartLossAt) return null;
+
+                const now = Date.now();
+                const lastLoss = new Date(state.lastHeartLossAt).getTime();
+                const elapsed = now - lastLoss;
+                const remaining = HEART_REGEN_INTERVAL_MS - (elapsed % HEART_REGEN_INTERVAL_MS);
+
+                return remaining;
+            },
 
             completeLesson: (lessonId, score) => set((state) => {
                 const existing = state.completedLessons[lessonId];
@@ -69,3 +121,6 @@ export const useProgressStore = create<ProgressState>()(
         }
     )
 );
+
+// Export the regen interval for UI usage
+export const HEART_REGEN_INTERVAL = HEART_REGEN_INTERVAL_MS;

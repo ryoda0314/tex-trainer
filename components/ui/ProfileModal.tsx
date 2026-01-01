@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCloudSync } from '@/hooks/useCloudSync';
 import { useAdmin } from '@/hooks/useAdmin';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { HeartTimer } from '@/components/ui/HeartTimer';
 import Link from 'next/link';
 
 interface ProfileModalProps {
@@ -72,21 +73,24 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                                 <Heart className="text-red-500 mb-2 fill-current" />
                                 <span className="text-xl font-bold text-gray-800">{hearts} / {maxHearts}</span>
                                 <span className="text-xs font-bold text-red-600 uppercase">Hearts</span>
+                                <HeartTimer />
                             </div>
                         </div>
 
                         {/* Actions */}
                         <div className="space-y-3">
-                            <Button
-                                variant={hearts < maxHearts ? "primary" : "locked"}
-                                fullWidth
-                                onClick={() => {
-                                    if (hearts < maxHearts) refillHearts();
-                                }}
-                                disabled={hearts >= maxHearts}
-                            >
-                                {hearts >= maxHearts ? "Hearts Full" : "Refill Hearts (Free)"}
-                            </Button>
+                            {isAdmin && (
+                                <Button
+                                    variant={hearts < maxHearts ? "primary" : "locked"}
+                                    fullWidth
+                                    onClick={() => {
+                                        if (hearts < maxHearts) refillHearts();
+                                    }}
+                                    disabled={hearts >= maxHearts}
+                                >
+                                    {hearts >= maxHearts ? "Hearts Full" : "Refill Hearts (Admin)"}
+                                </Button>
+                            )}
 
                             {user ? (
                                 <>
