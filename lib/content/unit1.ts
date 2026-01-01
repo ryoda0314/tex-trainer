@@ -271,7 +271,8 @@ export const unit1: Unit = {
                         { id: 't4', content: '^', type: 'operator' },
                         { id: 't5', content: '{2}', type: 'group' }
                     ],
-                    correctSequence: ['a', '_', '{n}', '^', '{2}']
+                    correctSequence: ['a', '_', '{n}', '^', '{2}'],
+                    alternativeSequences: [['a', '^', '{2}', '_', '{n}']]
                 },
                 {
                     id: 'u1-l3-q4',
@@ -361,7 +362,8 @@ export const unit1: Unit = {
                         { id: 't4', content: '^', type: 'operator' },
                         { id: 't5', content: '{2}', type: 'group' }
                     ],
-                    correctSequence: ['a', '_', '{n+1}', '^', '{2}']
+                    correctSequence: ['a', '_', '{n+1}', '^', '{2}'],
+                    alternativeSequences: [['a', '^', '{2}', '_', '{n+1}']]
                 },
                 {
                     id: 'u1-l4-q3',
