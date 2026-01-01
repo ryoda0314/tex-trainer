@@ -23,7 +23,7 @@ export function FeedbackSheet({ status, message, onContinue }: FeedbackSheetProp
                 exit={{ y: '100%' }}
                 className={cn(
                     "fixed bottom-0 left-0 right-0 p-4 pb-8 border-t-2 z-50",
-                    isCorrect ? "bg-duo-green-side/10 border-transparent" : "bg-duo-red-face/10 border-transparent"
+                    isCorrect ? "bg-green-100 border-green-500" : "bg-red-100 border-red-500"
                 )}
             >
                 <div className="max-w-2xl mx-auto flex flex-col md:flex-row items-center gap-4 justify-between">
